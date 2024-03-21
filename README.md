@@ -1,70 +1,54 @@
-# Getting Started with Create React App
+# Калькулятор расчета себестоимости товара для компании LR-Studio
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Проект представляет собой приложение для расчета себестоимости товара, разработанное специально для компании LR-Studio. Приложение позволяет рассчитывать себестоимость с учетом различных способов доставки, включая железнодорожные, автомобильные и авиаперевозки.
 
-## Available Scripts
+## Технологии
 
-In the project directory, you can run:
+Приложение разработано с использованием следующих технологий:
 
-### `npm start`
+- **React** - основной фреймворк для разработки пользовательского интерфейса.
+- **Material-UI (MUI)** - библиотека компонентов для React, используется для создания дизайна приложения.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Установка и запуск
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Для установки и запуска проекта необходимо выполнить следующие шаги:
 
-### `npm test`
+1. Клонировать репозиторий проекта на локальную машину:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash 
+git clone https://github.com/your-username/calculator_lr_studio.git
+```
 
-### `npm run build`
+2. Перейти в директорию проекта:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash 
+cd calculator_lr_studio
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+3. Установить необходимые зависимости:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```bash 
+npm install
+```
 
-### `npm run eject`
+4. Запустить проект:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```bash 
+npm start
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+После выполнения данных шагов, приложение будет доступно по адресу `http://localhost:3000` в вашем браузере.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Работа с калькулятором
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Для расчета себестоимости товара необходимо выбрать тип доставки и ввести стоимость перевозчика.
+Параметры и цены доставки можно настроить в файле `calculator_lr_studio/src/components/calculator_form.js`.
 
-## Learn More
+## Контакты
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Если у вас есть вопросы или предложения по проекту, не стесняйтесь обращаться.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
 
-### Code Splitting
+Надеюсь этот калькулятор будет Вам полезен!
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
