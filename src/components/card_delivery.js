@@ -14,6 +14,7 @@ function ProductCard({name, deliveryTime, price}) {
         priceToCard = price + " руб."
     }
 
+
     return (
         <Card sx={{maxWidth: 600, mb: 2}}>
             <CardContent>
