@@ -166,6 +166,7 @@ function CalculatorForm() {
 
     useEffect(() => {
         document.title = 'Калькулятор себестоимости товара с учетом доставки.'
+
     })
 
     return (<Box
