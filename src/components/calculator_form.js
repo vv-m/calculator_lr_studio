@@ -1,14 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import {
-    TextField,
-    Box,
-    Typography,
-    Divider,
-    FormControl,
-    Button,
-    InputLabel,
-    Select,
-    MenuItem,
+    TextField, Box, Typography, Divider, FormControl, Button, InputLabel, Select, MenuItem,
 } from '@mui/material';
 import ClearIcon from '@mui/icons-material/Clear';
 import ProductCard from "./card_delivery";
@@ -31,16 +23,13 @@ markupCB = (markupCB / 100) + 1
 
 //
 let railWay = {
-    name: "Ж/Д 🚂",
-    deliveryTime: "40-60"  // дней
+    name: "Ж/Д 🚂", deliveryTime: "40-60"  // дней
 }
 let auto = {
-    name: "Авто 🚛",
-    deliveryTime: "20-40"  // дней
+    name: "Авто 🚛", deliveryTime: "20-40"  // дней
 }
 let air = {
-    name: "Авиа ✈️",
-    deliveryTime: "12-17"  // дней
+    name: "Авиа ✈️", deliveryTime: "12-17"  // дней
 }
 
 
@@ -140,10 +129,6 @@ function CalculatorForm() {
         setSize3(''); // Размер 3
         setCoast(''); // Цена товара
         setCurrency(''); // Валюта
-
-        // setUsdValue(0);
-        // setRmbValue(0);
-        // setResultByRailway('');
     };
 
 
@@ -176,10 +161,14 @@ function CalculatorForm() {
             });
     }, []);
 
-    useEffect(calculateResult, [weight, size1, size2, size3, currency, coast, coastOfItemByRUB, usdValue, rmbValue]);
+    useEffect(calculateResult,
+        [weight, size1, size2, size3, currency, coast, coastOfItemByRUB, usdValue, rmbValue]);
 
-    return (
-        <Box
+    useEffect(() => {
+        document.title = 'Калькулятор себестоимости товара с учетом доставки.'
+    })
+
+    return (<Box
             sx={{
                 // '& .MuiFormControl-root': { m: 1, minWidth: '300px' },
                 display: 'flex',
@@ -252,12 +241,9 @@ function CalculatorForm() {
                             color="primary"
                             onClick={clearFields}
                             sx={{
-                                marginTop: 1,
-                                fontFamily: 'Play, sans-serif',
-                                width: '363px',
-                                height: '56px'
+                                marginTop: 1, fontFamily: 'Play, sans-serif', width: '363px', height: '56px'
                             }}
-                            startIcon={<ClearIcon />}
+                            startIcon={<ClearIcon/>}
                     >
                         Очистить
                     </Button>
@@ -268,8 +254,7 @@ function CalculatorForm() {
 
                 </FormControl>
             </Box>
-        </Box>
-    );
+        </Box>);
 }
 
 export default CalculatorForm;
