@@ -18,7 +18,7 @@ const priceAutoForCUB = 440  // USD за кг
 const priceAirForKG = 24  // USD за кг
 
 // Надбавка на курс ЦБ
-let markupCB = 4  // %
+let markupCB = 10  // %
 markupCB = (markupCB / 100) + 1
 
 //
@@ -147,12 +147,14 @@ function CalculatorForm() {
                         let usdValueTMP = valutes[i].getElementsByTagName("Value")[0].textContent
                         let usd = parseFloat(usdValueTMP.replace(',', '.'));
                         setUsdValue(usd)
+                        console.log("USD", usd * markupCB)
                     }
                     if (charCode === "CNY") {
                         let rmbValueTMP = valutes[i].getElementsByTagName("Value")[0].textContent
                         let rmb = parseFloat(rmbValueTMP.replace(',', '.'));
                         // Нашли нужный элемент, получаем значение.
                         setRmbValue(rmb)
+                        console.log("CNY", rmb * markupCB)
                     }
                 }
             })
