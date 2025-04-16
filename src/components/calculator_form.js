@@ -1,44 +1,67 @@
-import React, {useState, useEffect} from 'react';
-import {
-    TextField, Box, Typography, Divider, FormControl, Button, InputLabel, Select, MenuItem,
-} from '@mui/material';
-import ClearIcon from '@mui/icons-material/Clear';
-import ProductCard from "./card_delivery";
+import React, { useState, useEffect } from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { Container, Row, Col, Form, Button, Card } from 'react-bootstrap';
 
-export const alarmTextAir = "Вес превышен\n (до 50кг)"
+export const alarmTextAir = "Вес превышен\n (до 50кг)";
+
 // Цены ЖД
-const priceRailwayForKG = 2.4  // USD за кг
-const priceRailwayForCUB = 290  // USD за кг
+const priceRailwayForKG = 2.4;  // USD за кг
+const priceRailwayForCUB = 290;  // USD за кг
 
 // Цены Авто
-const priceAutoForKG = 5.8  // USD за кг
-const priceAutoForCUB = 440  // USD за кг
+const priceAutoForKG = 5.8;  // USD за кг
+const priceAutoForCUB = 440;  // USD за кг
 
 // Цена Авиа
-const priceAirForKG = 24  // USD за кг
+const priceAirForKG = 24;  // USD за кг
 
 // Надбавка на курс ЦБ
-let markupCB = 10  // %
-markupCB = (markupCB / 100) + 1
+const markupCBPercent = 10;  // %
+const markupCB = (markupCBPercent / 100) + 1;
 
-//
-let railWay = {
-    name: "Ж/Д 🚂", deliveryTime: "40-60"  // дней
-}
-let auto = {
-    name: "Авто 🚛", deliveryTime: "20-40"  // дней
-}
-let air = {
-    name: "Авиа ✈️", deliveryTime: "12-17"  // дней
-}
+// Типы доставки
+const railWay = {
+    name: "Ж/Д 🚂",
+    deliveryTime: "40-60"  // дней
+};
 
+const auto = {
+    name: "Авто 🚛",
+    deliveryTime: "20-40"  // дней
+};
+
+const air = {
+    name: "Авиа ✈️",
+    deliveryTime: "12-17"  // дней
+};
+
+// Компонент карточки продукта
+const ProductCard = ({ name, deliveryTime, price }) => {
+    return (
+        <Card className="mb-3">
+            <Card.Body className="d-flex justify-content-between align-items-center">
+                <div>
+                    <Card.Title>{name}</Card.Title>
+                    <Card.Subtitle className="mb-2 text-muted">Срок доставки: {deliveryTime} дней</Card.Subtitle>
+                </div>
+                <div>
+                    <Card.Text className={`${price ? 'fs-4' : 'fs-6 text-danger'} text-end mb-0`}>
+                        {price ? `${price} ₽` : 'Заполните все поля для расчета'}
+                    </Card.Text>
+                </div>
+            </Card.Body>
+        </Card>
+    );
+};
 
 function CalculatorForm() {
     const [weight, setWeight] = useState('');
     const [size1, setSize1] = useState('');
     const [size2, setSize2] = useState('');
     const [size3, setSize3] = useState('');
-    const [currency, setCurrency] = useState('');
+    const [volume, setVolume] = useState('');
+    const [currency, setCurrency] = useState('USD');
+    const [calcMode, setCalcMode] = useState('volume'); // dimensions или volume
     const [usdValue, setUsdValue] = useState(0);
     const [rmbValue, setRmbValue] = useState(0);
     const [coast, setCoast] = useState('');
@@ -47,114 +70,140 @@ function CalculatorForm() {
     const [resultByAuto, setResultByAuto] = useState('');
     const [resultByAir, setResultByAir] = useState('');
 
-
     const handleChange = (event, setter) => {
-        const value = event.target.value.replace(/\D/g, ''); // Удаляем все кроме цифр
+        // Заменяем запятую на точку
+        let value = event.target.value.replace(/,/g, '.');
+
+        // Разрешаем цифры и одну точку
+        value = value.replace(/[^\d.]/g, '');
+
+        // Проверяем, чтобы не было более одной точки
+        const parts = value.split('.');
+        if (parts.length > 2) {
+            // Если точек больше одной, оставляем только первую
+            value = parts[0] + '.' + parts.slice(1).join('');
+        }
+
+        // Если строка начинается с точки, добавляем перед ней ноль
+        if (value.startsWith('.')) {
+            value = '0' + value;
+        }
+
         setter(value);
     };
 
+    // Расчет объема при изменении размеров
+    useEffect(() => {
+        if (calcMode === 'dimensions' && size1 && size2 && size3) {
+            const calculatedVolume = (Number(size1) * Number(size2) * Number(size3) / 1000000).toFixed(6);
+            setVolume(calculatedVolume);
+        }
+    }, [size1, size2, size3, calcMode]);
+
+    // Переключение режима расчета
+    useEffect(() => {
+        if (calcMode === 'dimensions') {
+            setVolume(''); // Очищаем поле объема при переключении на размеры
+        } else {
+            setSize1(''); // Очищаем поля размеров при переключении на объем
+            setSize2('');
+            setSize3('');
+        }
+    }, [calcMode]);
+
     const calculateResult = () => {
-        if (!weight || !size1 || !size2 || !size3 || !coast || !currency) {
+        // Проверка заполнения нужных полей в зависимости от режима
+        if (!weight || !coast ||
+            (calcMode === 'dimensions' && (!size1 || !size2 || !size3)) ||
+            (calcMode === 'volume' && !volume)) {
             setResultByRailway('');
             setResultByAuto('');
             setResultByAir('');
             return;
         }
 
-        let currentCurrencyValue = 0
+        let currentCurrencyValue = 0;
 
-        // Устанавливаем курс валюты для расчета стоимости товар
+        // Устанавливаем курс валюты для расчета стоимости товара
         if (currency === "USD") {
-            currentCurrencyValue = usdValue * markupCB
+            currentCurrencyValue = usdValue * markupCB;
+        } else if (currency === "RMB") {
+            currentCurrencyValue = rmbValue * markupCB;
         }
-
-        if (currency === "RMB") {
-            currentCurrencyValue = rmbValue * markupCB
-        }
-
-        // ======= ТОВАР =======
 
         // Стоимость товара в рублях
-        setCoastOfItemByRUB(Number(coast) * currentCurrencyValue)
-        const volume = Number(size1) * Number(size2) * Number(size3) / 1000000
-        // Стоимость доставки Авто((цена за куб) + товара в рублях
+        const itemCostInRub = Number(coast) * currentCurrencyValue;
+        setCoastOfItemByRUB(itemCostInRub);
+
+        // Объем - или вычисляем из размеров, или берем прямо из поля объема
+        const volumeValue = calcMode === 'dimensions'
+            ? Number(size1) * Number(size2) * Number(size3) / 1000000
+            : Number(volume);
 
         // ======= ЖД =======
-
-        // Стоимость доставки Авто(цена за кг) + товара в рублях
-        const coastRailwayKG = Number(weight) * priceRailwayForKG * usdValue * markupCB + coastOfItemByRUB
-        // Стоимость доставки Авто(цена за куб) + товара в рублях
-        const coastRailwayCUB = volume * priceRailwayForCUB * usdValue * markupCB + coastOfItemByRUB
-        // Определяем какая стоимость дороже при расчете за кг или при расчете за кубы.
-        let coastRailway = 0
-        if (coastRailwayKG > coastRailwayCUB) {
-            coastRailway = coastRailwayKG
-        } else {
-            coastRailway = coastRailwayCUB
-        }
+        // Расчет по весу
+        const coastRailwayKG = Number(weight) * priceRailwayForKG * usdValue * markupCB + itemCostInRub;
+        // Расчет по объему
+        const coastRailwayCUB = volumeValue * priceRailwayForCUB * usdValue * markupCB + itemCostInRub;
+        // Выбираем большее значение
+        const coastRailway = Math.max(coastRailwayKG, coastRailwayCUB);
 
         // ======= АВТО =======
-
-        // Стоимость доставки ЖД(цена за кг) + товара в рублях
-        const coastAutoKG = Number(weight) * priceAutoForKG * usdValue * markupCB + coastOfItemByRUB
-        // Стоимость доставки ЖД(цена за куб) + товара в рублях
-        const coastAutoCUB = volume * priceAutoForCUB * usdValue * markupCB + coastOfItemByRUB
-        // Определяем какая стоимость дороже при расчете за кг или при расчете за кубы.
-        let coastAuto = 0
-        if (coastAutoKG > coastAutoCUB) {
-            coastAuto = coastAutoKG
-        } else {
-            coastAuto = coastAutoCUB
-        }
+        // Расчет по весу
+        const coastAutoKG = Number(weight) * priceAutoForKG * usdValue * markupCB + itemCostInRub;
+        // Расчет по объему
+        const coastAutoCUB = volumeValue * priceAutoForCUB * usdValue * markupCB + itemCostInRub;
+        // Выбираем большее значение
+        const coastAuto = Math.max(coastAutoKG, coastAutoCUB);
 
         // ======= АВИА =======
-        // Стоимость доставки Авто(цена за кг) + товара в рублях
-        let coastAir = Number(weight) * priceAirForKG * usdValue * markupCB + coastOfItemByRUB
+        // Только по весу
+        const coastAir = Number(weight) * priceAirForKG * usdValue * markupCB + itemCostInRub;
 
-
+        // Устанавливаем результаты
         setResultByRailway(Math.round(coastRailway).toLocaleString('ru-RU'));
         setResultByAuto(Math.round(coastAuto).toLocaleString('ru-RU'));
-        if (weight > 50) {
-            setResultByAir(alarmTextAir)
+
+        // Проверка веса для авиа
+        if (Number(weight) > 50) {
+            setResultByAir(alarmTextAir);
         } else {
             setResultByAir(Math.round(coastAir).toLocaleString('ru-RU'));
         }
-
     };
 
     const clearFields = () => {
-        setWeight(''); // Вес
-        setSize1(''); // Размер 1
-        setSize2(''); // Размер 2
-        setSize3(''); // Размер 3
-        setCoast(''); // Цена товара
-        setCurrency(''); // Валюта
+        setWeight('');
+        setSize1('');
+        setSize2('');
+        setSize3('');
+        setVolume('');
+        setCoast('');
+        // Не сбрасываем валюту и режим расчета
     };
 
-
+    // Получение курсов валют
     useEffect(() => {
         fetch('https://www.cbr-xml-daily.ru/daily_utf8.xml')
             .then(response => response.text())
             .then(data => {
                 const parser = new DOMParser();
                 const xml = parser.parseFromString(data, "text/xml");
-                // Получаем все элементы Valute.
+                // Получаем все элементы Valute
                 const valutes = xml.getElementsByTagName("Valute");
                 for (let i = 0; i < valutes.length; i++) {
                     const charCode = valutes[i].getElementsByTagName("CharCode")[0].textContent;
                     if (charCode === "USD") {
-                        // Нашли нужный элемент, получаем значение.
-                        let usdValueTMP = valutes[i].getElementsByTagName("Value")[0].textContent
+                        let usdValueTMP = valutes[i].getElementsByTagName("Value")[0].textContent;
                         let usd = parseFloat(usdValueTMP.replace(',', '.'));
-                        setUsdValue(usd)
-                        console.log("USD", usd * markupCB)
+                        setUsdValue(usd);
+                        console.log("USD", usd * markupCB);
                     }
                     if (charCode === "CNY") {
-                        let rmbValueTMP = valutes[i].getElementsByTagName("Value")[0].textContent
+                        let rmbValueTMP = valutes[i].getElementsByTagName("Value")[0].textContent;
                         let rmb = parseFloat(rmbValueTMP.replace(',', '.'));
-                        // Нашли нужный элемент, получаем значение.
-                        setRmbValue(rmb)
-                        console.log("CNY", rmb * markupCB)
+                        setRmbValue(rmb);
+                        console.log("CNY", rmb * markupCB);
                     }
                 }
             })
@@ -163,101 +212,173 @@ function CalculatorForm() {
             });
     }, []);
 
-    useEffect(calculateResult,
-        [weight, size1, size2, size3, currency, coast, coastOfItemByRUB, usdValue, rmbValue]);
-
+    // Пересчет при изменении любого параметра
     useEffect(() => {
-        document.title = 'Калькулятор себестоимости товара с учетом доставки.'
+        calculateResult();
+    }, [weight, size1, size2, size3, volume, currency, coast, usdValue, rmbValue, calcMode]);
 
-    })
+    // Установка заголовка страницы
+    useEffect(() => {
+        document.title = 'Калькулятор себестоимости товара с учетом доставки.';
+    }, []);
 
-    return (<Box
-            sx={{
-                // '& .MuiFormControl-root': { m: 1, minWidth: '300px' },
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: 'Play, sans-serif',
-                marginTop: 5,
-                minWidth: "250px"
-            }}
-            noValidate
-            autoComplete="off"
-        >
+    return (
+        <Container className="py-4">
+            <h3 className="mb-4 text-center">Расчет себестоимости товара с доставкой</h3>
 
-            <Box sx={{minWidth: "250px"}}>
-                <Typography variant="h5" sx={{fontFamily: 'Play, sans-serif', marginBottom: 3}}>Расчет
-                    себестоимости</Typography>
-                <FormControl variant="outlined">
-                    <TextField sx={{marginBottom: 2}}
-                               size="small"
-                               label="Вес, кг"
-                               variant="outlined"
-                               value={weight}
-                               onChange={(e) => handleChange(e, setWeight)}
-                    />
-                    <TextField sx={{marginBottom: 2}}
-                               size="small"
-                               label="Размер 1, см"
-                               variant="outlined"
-                               value={size1}
-                               onChange={(e) => handleChange(e, setSize1)}
-                    />
-                    <TextField sx={{marginBottom: 2}}
-                               size="small"
-                               label="Размер 2, см"
-                               variant="outlined"
-                               value={size2}
-                               onChange={(e) => handleChange(e, setSize2)}
-                    />
-                    <TextField sx={{marginBottom: 2}}
-                               size="small"
-                               label="Размер 3, см"
-                               variant="outlined"
-                               value={size3}
-                               onChange={(e) => handleChange(e, setSize3)}
-                    />
-                    <TextField sx={{marginBottom: 2}}
-                               size="small"
-                               label="Цена"
-                               variant="outlined"
-                               value={coast}
-                               onChange={(e) => handleChange(e, setCoast)}
-                    />
-                    <FormControl variant="outlined" sx={{marginBottom: 2}}>
-                        <InputLabel size="small" id="currency-selector-label">Валюта</InputLabel>
-                        <Select
-                            size="small"
-                            labelId="currency-selector-label"
-                            id="currency-selector"
-                            value={currency}
-                            label="Валюта"
-                            onChange={(e) => setCurrency(e.target.value)}
-                        >
-                            <MenuItem value="USD">USD</MenuItem>
-                            <MenuItem value="RMB">RMB</MenuItem>
-                        </Select>
-                    </FormControl>
-                    <Button variant="outlined"
+            <Row>
+                <Col md={6}>
+                    <Card className="mb-4">
+                        <Card.Header>
+                            <h5>Параметры расчета</h5>
+                        </Card.Header>
+                        <Card.Body>
+                            {/* Переключатель режима расчета */}
+                            <Form.Group className="mb-3">
+                                <Form.Label>Способ расчета:</Form.Label>
+                                <div>
+                                    <Form.Check
+                                        inline
+                                        type="radio"
+                                        id="volume-mode"
+                                        label="По объему"
+                                        name="calcMode"
+                                        checked={calcMode === 'volume'}
+                                        onChange={() => setCalcMode('volume')}
+                                    />
+                                    <Form.Check
+                                        inline
+                                        type="radio"
+                                        id="dimensions-mode"
+                                        label="По размерам"
+                                        name="calcMode"
+                                        checked={calcMode === 'dimensions'}
+                                        onChange={() => setCalcMode('dimensions')}
+                                    />
+                                </div>
+                            </Form.Group>
 
-                            color="primary"
-                            onClick={clearFields}
-                            sx={{
-                                marginTop: 1, fontFamily: 'Play, sans-serif', width: '363px', height: '56px'
-                            }}
-                            startIcon={<ClearIcon/>}
-                    >
-                        Очистить
-                    </Button>
-                    <Divider sx={{width: 'inherit', m: 2}}/>
-                    <ProductCard name={railWay.name} deliveryTime={railWay.deliveryTime} price={resultByRailway}/>
-                    <ProductCard name={auto.name} deliveryTime={auto.deliveryTime} price={resultByAuto}/>
-                    <ProductCard name={air.name} deliveryTime={air.deliveryTime} price={resultByAir}/>
+                            {/* Поле веса */}
+                            <Form.Group className="mb-3">
+                                <Form.Label>Вес, кг</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    value={weight}
+                                    onChange={(e) => handleChange(e, setWeight)}
+                                />
+                            </Form.Group>
 
-                </FormControl>
-            </Box>
-        </Box>);
+                            {/* Поля размеров или объема в зависимости от режима */}
+                            {calcMode === 'dimensions' ? (
+                                <>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Размер 1, см</Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            value={size1}
+                                            onChange={(e) => handleChange(e, setSize1)}
+                                        />
+                                    </Form.Group>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Размер 2, см</Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            value={size2}
+                                            onChange={(e) => handleChange(e, setSize2)}
+                                        />
+                                    </Form.Group>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Размер 3, см</Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            value={size3}
+                                            onChange={(e) => handleChange(e, setSize3)}
+                                        />
+                                    </Form.Group>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Объем, м³</Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            value={volume}
+                                            disabled
+                                        />
+                                    </Form.Group>
+                                </>
+                            ) : (
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Объем, м³</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        value={volume}
+                                        onChange={(e) => handleChange(e, setVolume)}
+                                    />
+                                </Form.Group>
+                            )}
+
+                            {/* Цена товара */}
+                            <Form.Group className="mb-3">
+                                <Form.Label>Цена товара</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    value={coast}
+                                    onChange={(e) => handleChange(e, setCoast)}
+                                />
+                            </Form.Group>
+
+                            {/* Переключатель валюты */}
+                            <Form.Group className="mb-3">
+                                <Form.Label>Валюта:</Form.Label>
+                                <div>
+                                    <Form.Check
+                                        inline
+                                        type="radio"
+                                        id="usd-currency"
+                                        label="USD"
+                                        name="currency"
+                                        checked={currency === 'USD'}
+                                        onChange={() => setCurrency('USD')}
+                                    />
+                                    <Form.Check
+                                        inline
+                                        type="radio"
+                                        id="rmb-currency"
+                                        label="RMB"
+                                        name="currency"
+                                        checked={currency === 'RMB'}
+                                        onChange={() => setCurrency('RMB')}
+                                    />
+                                </div>
+                            </Form.Group>
+
+                            {/* Курсы валют (информационно) */}
+                            <div className="mb-3 text-muted">
+                                <small>
+                                    Текущий курс USD: {usdValue ? (usdValue * markupCB).toFixed(2) : '...'} ₽ (с учетом наценки {markupCBPercent}%)
+                                    <br />
+                                    Текущий курс RMB: {rmbValue ? (rmbValue * markupCB).toFixed(2) : '...'} ₽ (с учетом наценки {markupCBPercent}%)
+                                </small>
+                            </div>
+
+                            <Button
+                                variant="outline-secondary"
+                                onClick={clearFields}
+                                className="w-100"
+                            >
+                                Очистить поля
+                            </Button>
+                        </Card.Body>
+                    </Card>
+                </Col>
+
+                <Col md={6}>
+                    <h5 className="mb-3">Результаты расчета:</h5>
+                    <ProductCard name={railWay.name} deliveryTime={railWay.deliveryTime} price={resultByRailway} />
+                    <ProductCard name={auto.name} deliveryTime={auto.deliveryTime} price={resultByAuto} />
+                    <ProductCard name={air.name} deliveryTime={air.deliveryTime} price={resultByAir} />
+                </Col>
+            </Row>
+        </Container>
+    );
 }
 
 export default CalculatorForm;
