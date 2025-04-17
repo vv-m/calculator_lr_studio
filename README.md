@@ -23,7 +23,7 @@ npm run build
 git add . && git commit -m "gh-pages has been added" && git push
 ```
 
-3. Запускаем деплой:
+3. Запускаем деплой (запросит 2 раза пароль):
 
 ```bash 
 npm run deploy

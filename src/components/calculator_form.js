@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container, Row, Col, Form, Button, Card } from 'react-bootstrap';
 
-export const alarmTextAir = "Вес превышен\n (до 50кг)";
+export const alarmWeightTextAir = "Вес превышен\n (до 50кг)";
+export const alarmVolumeTextAir = "Объем превышен\n (до 1 м³)";
 
 // Цены ЖД
 const priceRailwayForKG = 2.4;  // USD за кг
@@ -166,7 +167,14 @@ function CalculatorForm() {
 
         // Проверка веса для авиа
         if (Number(weight) > 50) {
-            setResultByAir(alarmTextAir);
+            setResultByAir(alarmWeightTextAir);
+        } else {
+            setResultByAir(Math.round(coastAir).toLocaleString('ru-RU'));
+        }
+
+        // Проверка веса для авиа
+        if (Number(volume) > 1) {
+            setResultByAir(alarmVolumeTextAir);
         } else {
             setResultByAir(Math.round(coastAir).toLocaleString('ru-RU'));
         }
