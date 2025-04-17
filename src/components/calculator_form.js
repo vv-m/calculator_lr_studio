@@ -23,17 +23,17 @@ const markupCB = (markupCBPercent / 100) + 1;
 // Типы доставки
 const railWay = {
     name: "Ж/Д 🚂",
-    deliveryTime: "40-60"  // дней
+    deliveryTime: "45-60"  // дней
 };
 
 const auto = {
     name: "Авто 🚛",
-    deliveryTime: "20-40"  // дней
+    deliveryTime: "25-35"  // дней
 };
 
 const air = {
     name: "Авиа ✈️",
-    deliveryTime: "12-17"  // дней
+    deliveryTime: "15-25"  // дней
 };
 
 // Компонент карточки продукта
