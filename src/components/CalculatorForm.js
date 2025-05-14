@@ -2,101 +2,72 @@ import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container, Row, Col, Form, Button, Card } from 'react-bootstrap';
 
-export const alarmWeightTextAir = "Вес превышен\n (до 50кг)";
-export const alarmVolumeTextAir = "Объем превышен\n (до 1 м³)";
+// Компоненты
+import ProductCard from './ProductCard';
 
-// Цены ЖД
-const priceRailwayForKG = 2.4;  // USD за кг
-const priceRailwayForCUB = 290;  // USD за кг
+// Хуки
+import useExchangeRates from '../hooks/useExchangeRates';
 
-// Цены Авто
-const priceAutoForKG = 5.8;  // USD за кг
-const priceAutoForCUB = 440;  // USD за кг
+// Утилиты
+import {
+    calculateRailwayDelivery,
+    calculateAutoDelivery,
+    calculateAirDelivery,
+    calculateSellingPrice,
+    calculateMargin,
+    formatNumber
+} from '../utils/calculationUtils';
+import { handleNumberInputChange, calculateVolume } from '../utils/inputHelpers';
 
-// Цена Авиа
-const priceAirForKG = 24;  // USD за кг
-
-// Надбавка на курс ЦБ
-const markupCBPercent = 10;  // %
-const markupCB = (markupCBPercent / 100) + 1;
-
-// Типы доставки
-const railWay = {
-    name: "Ж/Д 🚂",
-    deliveryTime: "45-60"  // дней
-};
-
-const auto = {
-    name: "Авто 🚛",
-    deliveryTime: "25-35"  // дней
-};
-
-const air = {
-    name: "Авиа ✈️",
-    deliveryTime: "15-25"  // дней
-};
-
-// Компонент карточки продукта
-const ProductCard = ({ name, deliveryTime, price }) => {
-    return (
-        <Card className="mb-3">
-            <Card.Body className="d-flex justify-content-between align-items-center">
-                <div>
-                    <Card.Title>{name}</Card.Title>
-                    <Card.Subtitle className="mb-2 text-muted">Срок доставки: {deliveryTime} дней</Card.Subtitle>
-                </div>
-                <div>
-                    <Card.Text className={`${price ? 'fs-4' : 'fs-6 text-danger'} text-end mb-0`}>
-                        {price ? `${price} ₽` : 'Заполните все поля для расчета'}
-                    </Card.Text>
-                </div>
-            </Card.Body>
-        </Card>
-    );
-};
+// Константы
+import {
+    railWay,
+    auto,
+    air,
+    markupCB,
+    markupCBPercent,
+    defaultMarkupCoefficient
+} from '../constants';
 
 function CalculatorForm() {
+    // Состояние полей ввода
     const [weight, setWeight] = useState('');
     const [size1, setSize1] = useState('');
     const [size2, setSize2] = useState('');
     const [size3, setSize3] = useState('');
     const [volume, setVolume] = useState('');
+    const [coast, setCoast] = useState('');
+    const [markupCoefficient, setMarkupCoefficient] = useState(defaultMarkupCoefficient);
+
+    // Режимы расчета и валюты
     const [currency, setCurrency] = useState('USD');
     const [calcMode, setCalcMode] = useState('volume'); // dimensions или volume
-    const [usdValue, setUsdValue] = useState(0);
-    const [rmbValue, setRmbValue] = useState(0);
-    const [coast, setCoast] = useState('');
+
+    // Стоимость товара в рублях
     const [coastOfItemByRUB, setCoastOfItemByRUB] = useState(0);
+
+    // Результаты расчетов для ЖД
     const [resultByRailway, setResultByRailway] = useState('');
+    const [sellingPriceRailway, setSellingPriceRailway] = useState('');
+    const [marginRailway, setMarginRailway] = useState('');
+
+    // Результаты расчетов для Авто
     const [resultByAuto, setResultByAuto] = useState('');
+    const [sellingPriceAuto, setSellingPriceAuto] = useState('');
+    const [marginAuto, setMarginAuto] = useState('');
+
+    // Результаты расчетов для Авиа
     const [resultByAir, setResultByAir] = useState('');
+    const [sellingPriceAir, setSellingPriceAir] = useState('');
+    const [marginAir, setMarginAir] = useState('');
 
-    const handleChange = (event, setter) => {
-        // Заменяем запятую на точку
-        let value = event.target.value.replace(/,/g, '.');
-
-        // Разрешаем цифры и одну точку
-        value = value.replace(/[^\d.]/g, '');
-
-        // Проверяем, чтобы не было более одной точки
-        const parts = value.split('.');
-        if (parts.length > 2) {
-            // Если точек больше одной, оставляем только первую
-            value = parts[0] + '.' + parts.slice(1).join('');
-        }
-
-        // Если строка начинается с точки, добавляем перед ней ноль
-        if (value.startsWith('.')) {
-            value = '0' + value;
-        }
-
-        setter(value);
-    };
+    // Получение курсов валют
+    const { usdValue, rmbValue } = useExchangeRates();
 
     // Расчет объема при изменении размеров
     useEffect(() => {
         if (calcMode === 'dimensions' && size1 && size2 && size3) {
-            const calculatedVolume = (Number(size1) * Number(size2) * Number(size3) / 1000000).toFixed(6);
+            const calculatedVolume = calculateVolume(size1, size2, size3);
             setVolume(calculatedVolume);
         }
     }, [size1, size2, size3, calcMode]);
@@ -117,15 +88,21 @@ function CalculatorForm() {
         if (!weight || !coast ||
             (calcMode === 'dimensions' && (!size1 || !size2 || !size3)) ||
             (calcMode === 'volume' && !volume)) {
+            // Очищаем все результаты
             setResultByRailway('');
             setResultByAuto('');
             setResultByAir('');
+            setSellingPriceRailway('');
+            setSellingPriceAuto('');
+            setSellingPriceAir('');
+            setMarginRailway('');
+            setMarginAuto('');
+            setMarginAir('');
             return;
         }
 
+        // Определяем текущий курс валюты для расчета
         let currentCurrencyValue = 0;
-
-        // Устанавливаем курс валюты для расчета стоимости товара
         if (currency === "USD") {
             currentCurrencyValue = usdValue * markupCB;
         } else if (currency === "RMB") {
@@ -141,42 +118,68 @@ function CalculatorForm() {
             ? Number(size1) * Number(size2) * Number(size3) / 1000000
             : Number(volume);
 
-        // ======= ЖД =======
-        // Расчет по весу
-        const coastRailwayKG = Number(weight) * priceRailwayForKG * usdValue * markupCB + itemCostInRub;
-        // Расчет по объему
-        const coastRailwayCUB = volumeValue * priceRailwayForCUB * usdValue * markupCB + itemCostInRub;
-        // Выбираем большее значение
-        const coastRailway = Math.max(coastRailwayKG, coastRailwayCUB);
+        // Коэффициент наценки
+        const markup = Number(markupCoefficient);
 
-        // ======= АВТО =======
-        // Расчет по весу
-        const coastAutoKG = Number(weight) * priceAutoForKG * usdValue * markupCB + itemCostInRub;
-        // Расчет по объему
-        const coastAutoCUB = volumeValue * priceAutoForCUB * usdValue * markupCB + itemCostInRub;
-        // Выбираем большее значение
-        const coastAuto = Math.max(coastAutoKG, coastAutoCUB);
+        // ======= Расчет для ЖД =======
+        const coastRailway = calculateRailwayDelivery(
+            Number(weight),
+            volumeValue,
+            usdValue,
+            markupCB,
+            itemCostInRub
+        );
 
-        // ======= АВИА =======
-        // Только по весу
-        const coastAir = Number(weight) * priceAirForKG * usdValue * markupCB + itemCostInRub;
+        // Расчет цены продажи и маржинальности для ЖД
+        const sellPriceRailway = calculateSellingPrice(coastRailway, markup);
+        const marginRailwayValue = calculateMargin(sellPriceRailway, coastRailway);
 
-        // Устанавливаем результаты
-        setResultByRailway(Math.round(coastRailway).toLocaleString('ru-RU'));
-        setResultByAuto(Math.round(coastAuto).toLocaleString('ru-RU'));
+        // Устанавливаем результаты для ЖД
+        setResultByRailway(formatNumber(coastRailway));
+        setSellingPriceRailway(formatNumber(sellPriceRailway));
+        setMarginRailway(marginRailwayValue);
 
-        // Проверка веса для авиа
-        if (Number(weight) > 50) {
-            setResultByAir(alarmWeightTextAir);
+        // ======= Расчет для Авто =======
+        const coastAuto = calculateAutoDelivery(
+            Number(weight),
+            volumeValue,
+            usdValue,
+            markupCB,
+            itemCostInRub
+        );
+
+        // Расчет цены продажи и маржинальности для Авто
+        const sellPriceAuto = calculateSellingPrice(coastAuto, markup);
+        const marginAutoValue = calculateMargin(sellPriceAuto, coastAuto);
+
+        // Устанавливаем результаты для Авто
+        setResultByAuto(formatNumber(coastAuto));
+        setSellingPriceAuto(formatNumber(sellPriceAuto));
+        setMarginAuto(marginAutoValue);
+
+        // ======= Расчет для Авиа с проверкой ограничений =======
+        const airResult = calculateAirDelivery(
+            Number(weight),
+            volumeValue,
+            usdValue,
+            markupCB,
+            itemCostInRub
+        );
+
+        if (airResult.hasLimitation) {
+            // Если есть ограничения, показываем сообщение
+            setResultByAir(airResult.message);
+            setSellingPriceAir('');
+            setMarginAir('');
         } else {
-            setResultByAir(Math.round(coastAir).toLocaleString('ru-RU'));
-        }
+            // Расчет цены продажи и маржинальности для Авиа
+            const sellPriceAir = calculateSellingPrice(airResult.cost, markup);
+            const marginAirValue = calculateMargin(sellPriceAir, airResult.cost);
 
-        // Проверка веса для авиа
-        if (Number(volume) > 1) {
-            setResultByAir(alarmVolumeTextAir);
-        } else {
-            setResultByAir(Math.round(coastAir).toLocaleString('ru-RU'));
+            // Устанавливаем результаты для Авиа
+            setResultByAir(formatNumber(airResult.cost));
+            setSellingPriceAir(formatNumber(sellPriceAir));
+            setMarginAir(marginAirValue);
         }
     };
 
@@ -187,43 +190,13 @@ function CalculatorForm() {
         setSize3('');
         setVolume('');
         setCoast('');
-        // Не сбрасываем валюту и режим расчета
+        // Не сбрасываем валюту, режим расчета и коэффициент наценки
     };
-
-    // Получение курсов валют
-    useEffect(() => {
-        fetch('https://www.cbr-xml-daily.ru/daily_utf8.xml')
-            .then(response => response.text())
-            .then(data => {
-                const parser = new DOMParser();
-                const xml = parser.parseFromString(data, "text/xml");
-                // Получаем все элементы Valute
-                const valutes = xml.getElementsByTagName("Valute");
-                for (let i = 0; i < valutes.length; i++) {
-                    const charCode = valutes[i].getElementsByTagName("CharCode")[0].textContent;
-                    if (charCode === "USD") {
-                        let usdValueTMP = valutes[i].getElementsByTagName("Value")[0].textContent;
-                        let usd = parseFloat(usdValueTMP.replace(',', '.'));
-                        setUsdValue(usd);
-                        console.log("USD", usd * markupCB);
-                    }
-                    if (charCode === "CNY") {
-                        let rmbValueTMP = valutes[i].getElementsByTagName("Value")[0].textContent;
-                        let rmb = parseFloat(rmbValueTMP.replace(',', '.'));
-                        setRmbValue(rmb);
-                        console.log("CNY", rmb * markupCB);
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Ошибка при получении данных:', error);
-            });
-    }, []);
 
     // Пересчет при изменении любого параметра
     useEffect(() => {
         calculateResult();
-    }, [weight, size1, size2, size3, volume, currency, coast, usdValue, rmbValue, calcMode]);
+    }, [weight, size1, size2, size3, volume, currency, coast, usdValue, rmbValue, calcMode, markupCoefficient]);
 
     // Установка заголовка страницы
     useEffect(() => {
@@ -272,7 +245,7 @@ function CalculatorForm() {
                                 <Form.Control
                                     type="text"
                                     value={weight}
-                                    onChange={(e) => handleChange(e, setWeight)}
+                                    onChange={(e) => handleNumberInputChange(e, setWeight)}
                                 />
                             </Form.Group>
 
@@ -284,7 +257,7 @@ function CalculatorForm() {
                                         <Form.Control
                                             type="text"
                                             value={size1}
-                                            onChange={(e) => handleChange(e, setSize1)}
+                                            onChange={(e) => handleNumberInputChange(e, setSize1)}
                                         />
                                     </Form.Group>
                                     <Form.Group className="mb-3">
@@ -292,7 +265,7 @@ function CalculatorForm() {
                                         <Form.Control
                                             type="text"
                                             value={size2}
-                                            onChange={(e) => handleChange(e, setSize2)}
+                                            onChange={(e) => handleNumberInputChange(e, setSize2)}
                                         />
                                     </Form.Group>
                                     <Form.Group className="mb-3">
@@ -300,7 +273,7 @@ function CalculatorForm() {
                                         <Form.Control
                                             type="text"
                                             value={size3}
-                                            onChange={(e) => handleChange(e, setSize3)}
+                                            onChange={(e) => handleNumberInputChange(e, setSize3)}
                                         />
                                     </Form.Group>
                                     <Form.Group className="mb-3">
@@ -318,7 +291,7 @@ function CalculatorForm() {
                                     <Form.Control
                                         type="text"
                                         value={volume}
-                                        onChange={(e) => handleChange(e, setVolume)}
+                                        onChange={(e) => handleNumberInputChange(e, setVolume)}
                                     />
                                 </Form.Group>
                             )}
@@ -329,7 +302,17 @@ function CalculatorForm() {
                                 <Form.Control
                                     type="text"
                                     value={coast}
-                                    onChange={(e) => handleChange(e, setCoast)}
+                                    onChange={(e) => handleNumberInputChange(e, setCoast)}
+                                />
+                            </Form.Group>
+
+                            {/* Коэффициент наценки */}
+                            <Form.Group className="mb-3">
+                                <Form.Label>Коэффициент наценки</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    value={markupCoefficient}
+                                    onChange={(e) => handleNumberInputChange(e, setMarkupCoefficient)}
                                 />
                             </Form.Group>
 
@@ -380,9 +363,27 @@ function CalculatorForm() {
 
                 <Col md={6}>
                     <h5 className="mb-3">Результаты расчета:</h5>
-                    <ProductCard name={railWay.name} deliveryTime={railWay.deliveryTime} price={resultByRailway} />
-                    <ProductCard name={auto.name} deliveryTime={auto.deliveryTime} price={resultByAuto} />
-                    <ProductCard name={air.name} deliveryTime={air.deliveryTime} price={resultByAir} />
+                    <ProductCard
+                        name={railWay.name}
+                        deliveryTime={railWay.deliveryTime}
+                        price={resultByRailway}
+                        sellingPrice={sellingPriceRailway}
+                        margin={marginRailway}
+                    />
+                    <ProductCard
+                        name={auto.name}
+                        deliveryTime={auto.deliveryTime}
+                        price={resultByAuto}
+                        sellingPrice={sellingPriceAuto}
+                        margin={marginAuto}
+                    />
+                    <ProductCard
+                        name={air.name}
+                        deliveryTime={air.deliveryTime}
+                        price={resultByAir}
+                        sellingPrice={sellingPriceAir}
+                        margin={marginAir}
+                    />
                 </Col>
             </Row>
         </Container>

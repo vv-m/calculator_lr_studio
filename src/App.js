@@ -1,5 +1,5 @@
 // import './App.css';
-import CalculatorForm from './components/calculator_form'
+import CalculatorForm from './components/CalculatorForm'  // Обновленный путь импорта
 import {createTheme, ThemeProvider} from "@mui/material";
 
 const theme = createTheme({
