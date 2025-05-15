@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { currencyApiUrl } from '../constants';
 
+
 /**
  * Хук для получения актуальных курсов валют
  * @returns {Object} Объект с курсами валют
