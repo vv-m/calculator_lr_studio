@@ -15,30 +15,16 @@ const useExchangeRates = () => {
         const fetchExchangeRates = async () => {
             try {
                 setIsLoading(true);
-                const response = await fetch(currencyApiUrl);
-                const data = await response.text();
 
-                const parser = new DOMParser();
-                const xml = parser.parseFromString(data, "text/xml");
+                // Получаем курс USD
+                const usdResponse = await fetch(currencyApiUrl + "USD");
+                const usdData = await usdResponse.json();
+                setUsdValue(usdData.rates.RUB);
 
-                // Получаем все элементы Valute
-                const valutes = xml.getElementsByTagName("Valute");
-
-                for (let i = 0; i < valutes.length; i++) {
-                    const charCode = valutes[i].getElementsByTagName("CharCode")[0].textContent;
-
-                    if (charCode === "USD") {
-                        let usdValueTMP = valutes[i].getElementsByTagName("Value")[0].textContent;
-                        let usd = parseFloat(usdValueTMP.replace(',', '.'));
-                        setUsdValue(usd);
-                    }
-
-                    if (charCode === "CNY") {
-                        let rmbValueTMP = valutes[i].getElementsByTagName("Value")[0].textContent;
-                        let rmb = parseFloat(rmbValueTMP.replace(',', '.'));
-                        setRmbValue(rmb);
-                    }
-                }
+                // Получаем курс CNY
+                const cnyResponse = await fetch(currencyApiUrl + "CNY");
+                const cnyData = await cnyResponse.json();
+                setRmbValue(cnyData.rates.RUB);
 
                 setIsLoading(false);
             } catch (err) {
@@ -48,7 +34,8 @@ const useExchangeRates = () => {
             }
         };
 
-        fetchExchangeRates();
+        void fetchExchangeRates();
+
     }, []);
 
     return { usdValue, rmbValue, isLoading, error };

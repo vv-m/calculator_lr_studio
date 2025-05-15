@@ -34,7 +34,8 @@ export const markupCBPercent = 20;  // %
 export const markupCB = (markupCBPercent / 100) + 1;
 
 // API URL для курсов валют
-export const currencyApiUrl = 'https://www.cbr-xml-daily.ru/daily_utf8.xml';
+// export const currencyApiUrl = 'https://www.cbr-xml-daily.ru/daily_utf8.xml';
+export const currencyApiUrl = 'https://api.exchangerate-api.com/v4/latest/';
 
 // Ограничения для авиа
 export const maxWeightForAir = 50; // кг
