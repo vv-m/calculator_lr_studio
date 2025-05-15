@@ -27,7 +27,7 @@ export const priceAutoForKG = 5.8;  // USD за кг АВТО
 export const priceAutoForCUB = 440;  // USD за м³ АВТО
 
 // Цена Авиа
-export const priceAirForKG = 24;  // USD за кг АВИА
+export const priceAirForKG = 27;  // USD за кг АВИА
 
 // Надбавка на курс ЦБ
 export const markupCBPercent = 20;  // %
