@@ -1,45 +1,36 @@
 import React from 'react';
-import { Card } from 'react-bootstrap';
 
-/**
- * Компонент карточки продукта, отображающий информацию о типе доставки,
- * сроках, ценах и маржинальности.
- */
 const ProductCard = ({ name, deliveryTime, price, sellingPrice, margin }) => {
     return (
-        <Card className="mb-3">
-            <Card.Body>
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                    <div>
-                        <Card.Title>{name}</Card.Title>
-                        <Card.Subtitle className="mb-2 text-muted">Срок доставки: {deliveryTime} дней</Card.Subtitle>
+        <div className="mb-3 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+                <div>
+                    <h5 className="text-lg font-semibold">{name}</h5>
+                    <p className="text-sm text-gray-500">Срок доставки: {deliveryTime} дней</p>
+                </div>
+                {!price && (
+                    <p className="text-sm text-red-400 text-right">
+                        Заполните все поля для расчета
+                    </p>
+                )}
+            </div>
+            {price && (
+                <div className="space-y-1 mt-3">
+                    <div className="flex justify-between">
+                        <span className="text-gray-600">Себестоимость:</span>
+                        <span className="text-lg">{price} ₽</span>
                     </div>
-                    <div>
-                        {!price ? (
-                            <Card.Text className="fs-6 text-danger text-end mb-0">
-                                Заполните все поля для расчета
-                            </Card.Text>
-                        ) : null}
+                    <div className="flex justify-between">
+                        <span className="text-gray-600">Цена продажи:</span>
+                        <span className="text-lg font-bold">{sellingPrice} ₽</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-gray-600">Маржинальность:</span>
+                        <span className="text-lg text-emerald-600 font-medium">{margin} ₽</span>
                     </div>
                 </div>
-                {price ? (
-                    <div className="d-flex flex-column">
-                        <div className="d-flex justify-content-between">
-                            <span>Себестоимость:</span>
-                            <span className="fs-5">{price} ₽</span>
-                        </div>
-                        <div className="d-flex justify-content-between">
-                            <span>Цена продажи:</span>
-                            <span className="fs-5 fw-bold">{sellingPrice} ₽</span>
-                        </div>
-                        <div className="d-flex justify-content-between">
-                            <span>Маржинальность:</span>
-                            <span className="fs-5 text-success">{margin} ₽</span>
-                        </div>
-                    </div>
-                ) : null}
-            </Card.Body>
-        </Card>
+            )}
+        </div>
     );
 };
 

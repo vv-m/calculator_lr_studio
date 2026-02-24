@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import { Container, Row, Col, Form, Button, Card, Alert, Spinner } from 'react-bootstrap';
 
 import ProductCard from './ProductCard';
 import SettingsPanel from './SettingsPanel';
@@ -171,196 +169,219 @@ function CalculatorForm() {
 
     if (settingsLoading || !settings) {
         return (
-            <Container className="py-4 text-center">
-                <Spinner animation="border" role="status" className="mb-3" />
-                <p>Загрузка настроек...</p>
-            </Container>
+            <div className="flex flex-col items-center justify-center py-16">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
+                <p className="mt-4 text-gray-500">Загрузка настроек...</p>
+            </div>
         );
     }
 
     return (
-        <Container className="py-4">
+        <div className="mx-auto max-w-5xl px-4 py-6">
             {showError && (
-                <Alert variant="danger" dismissible onClose={() => setShowError(false)}>
-                    Не удалось загрузить настройки из Supabase. Используются настройки по умолчанию.
-                    Обратитесь к администратору.
-                </Alert>
+                <div className="mb-4 flex items-start justify-between rounded-lg border border-red-200 bg-red-50 p-4">
+                    <p className="text-sm text-red-700">
+                        Не удалось загрузить настройки из Supabase. Используются настройки по умолчанию.
+                        Обратитесь к администратору.
+                    </p>
+                    <button onClick={() => setShowError(false)} className="ml-4 text-red-400 hover:text-red-600">&times;</button>
+                </div>
             )}
 
             {showMissingWarning && !showError && (
-                <Alert variant="warning" dismissible onClose={() => setShowMissingWarning(false)}>
-                    В Supabase отсутствуют следующие параметры (взяты из настроек по умолчанию):
-                    <ul className="mb-0 mt-1">
-                        {missingKeys.map((item, i) => (
-                            <li key={i}>{item.label}: <strong>{item.defaultValue}</strong></li>
-                        ))}
-                    </ul>
-                    Обратитесь к администратору.
-                </Alert>
+                <div className="mb-4 flex items-start justify-between rounded-lg border border-amber-200 bg-amber-50 p-4">
+                    <div className="text-sm text-amber-700">
+                        В Supabase отсутствуют следующие параметры (взяты из настроек по умолчанию):
+                        <ul className="mt-1 list-disc pl-5">
+                            {missingKeys.map((item, i) => (
+                                <li key={i}>{item.label}: <strong>{item.defaultValue}</strong></li>
+                            ))}
+                        </ul>
+                        Обратитесь к администратору.
+                    </div>
+                    <button onClick={() => setShowMissingWarning(false)} className="ml-4 text-amber-400 hover:text-amber-600">&times;</button>
+                </div>
             )}
 
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <div style={{ width: '100px' }} />
-                <h3 className="mb-0 text-center flex-grow-1">Расчет себестоимости товара с доставкой</h3>
-                <Button
-                    variant="outline-secondary"
-                    size="sm"
+            <div className="mb-6 flex items-center justify-between">
+                <div className="w-24" />
+                <h1 className="flex-1 text-center text-2xl font-bold text-gray-800">
+                    Расчет себестоимости товара с доставкой
+                </h1>
+                <button
                     onClick={() => setShowSettings(true)}
-                    style={{ width: '100px' }}
+                    className="w-24 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition"
                 >
                     Настройки
-                </Button>
+                </button>
             </div>
 
-            <Row>
-                <Col md={6}>
-                    <Card className="mb-4">
-                        <Card.Header>
-                            <h5>Параметры расчета</h5>
-                        </Card.Header>
-                        <Card.Body>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Способ расчета:</Form.Label>
-                                <div>
-                                    <Form.Check
-                                        inline
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {/* Левая колонка — параметры */}
+                <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+                    <div className="border-b border-gray-200 px-5 py-3">
+                        <h2 className="text-lg font-semibold text-gray-700">Параметры расчета</h2>
+                    </div>
+                    <div className="space-y-4 p-5">
+                        {/* Способ расчёта */}
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Способ расчета:</label>
+                            <div className="flex gap-4">
+                                <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                                    <input
                                         type="radio"
-                                        id="volume-mode"
-                                        label="По объему"
                                         name="calcMode"
                                         checked={calcMode === 'volume'}
                                         onChange={() => setCalcMode('volume')}
+                                        className="accent-blue-600"
                                     />
-                                    <Form.Check
-                                        inline
+                                    По объему
+                                </label>
+                                <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                                    <input
                                         type="radio"
-                                        id="dimensions-mode"
-                                        label="По размерам"
                                         name="calcMode"
                                         checked={calcMode === 'dimensions'}
                                         onChange={() => setCalcMode('dimensions')}
+                                        className="accent-blue-600"
+                                    />
+                                    По размерам
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Вес */}
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Вес, кг</label>
+                            <input
+                                type="text"
+                                value={weight}
+                                onChange={(e) => handleNumberInputChange(e, setWeight)}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                            />
+                        </div>
+
+                        {/* Объём / Размеры */}
+                        {calcMode === 'dimensions' ? (
+                            <>
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">Размер 1, см</label>
+                                    <input
+                                        type="text"
+                                        value={size1}
+                                        onChange={(e) => handleNumberInputChange(e, setSize1)}
+                                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                                     />
                                 </div>
-                            </Form.Group>
-
-                            <Form.Group className="mb-3">
-                                <Form.Label>Вес, кг</Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    value={weight}
-                                    onChange={(e) => handleNumberInputChange(e, setWeight)}
-                                />
-                            </Form.Group>
-
-                            {calcMode === 'dimensions' ? (
-                                <>
-                                    <Form.Group className="mb-3">
-                                        <Form.Label>Размер 1, см</Form.Label>
-                                        <Form.Control
-                                            type="text"
-                                            value={size1}
-                                            onChange={(e) => handleNumberInputChange(e, setSize1)}
-                                        />
-                                    </Form.Group>
-                                    <Form.Group className="mb-3">
-                                        <Form.Label>Размер 2, см</Form.Label>
-                                        <Form.Control
-                                            type="text"
-                                            value={size2}
-                                            onChange={(e) => handleNumberInputChange(e, setSize2)}
-                                        />
-                                    </Form.Group>
-                                    <Form.Group className="mb-3">
-                                        <Form.Label>Размер 3, см</Form.Label>
-                                        <Form.Control
-                                            type="text"
-                                            value={size3}
-                                            onChange={(e) => handleNumberInputChange(e, setSize3)}
-                                        />
-                                    </Form.Group>
-                                    <Form.Group className="mb-3">
-                                        <Form.Label>Объем, м³</Form.Label>
-                                        <Form.Control
-                                            type="text"
-                                            value={volume}
-                                            disabled
-                                        />
-                                    </Form.Group>
-                                </>
-                            ) : (
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Объем, м³</Form.Label>
-                                    <Form.Control
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">Размер 2, см</label>
+                                    <input
+                                        type="text"
+                                        value={size2}
+                                        onChange={(e) => handleNumberInputChange(e, setSize2)}
+                                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">Размер 3, см</label>
+                                    <input
+                                        type="text"
+                                        value={size3}
+                                        onChange={(e) => handleNumberInputChange(e, setSize3)}
+                                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">Объем, м³</label>
+                                    <input
                                         type="text"
                                         value={volume}
-                                        onChange={(e) => handleNumberInputChange(e, setVolume)}
+                                        disabled
+                                        className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500"
                                     />
-                                </Form.Group>
-                            )}
-
-                            <Form.Group className="mb-3">
-                                <Form.Label>Цена товара</Form.Label>
-                                <Form.Control
+                                </div>
+                            </>
+                        ) : (
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-gray-700">Объем, м³</label>
+                                <input
                                     type="text"
-                                    value={coast}
-                                    onChange={(e) => handleNumberInputChange(e, setCoast)}
+                                    value={volume}
+                                    onChange={(e) => handleNumberInputChange(e, setVolume)}
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                                 />
-                            </Form.Group>
+                            </div>
+                        )}
 
-                            <Form.Group className="mb-3">
-                                <Form.Label>Коэффициент наценки</Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    value={markupCoefficient}
-                                    onChange={(e) => handleNumberInputChange(e, setMarkupCoefficient)}
-                                />
-                            </Form.Group>
+                        {/* Цена товара */}
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Цена товара</label>
+                            <input
+                                type="text"
+                                value={coast}
+                                onChange={(e) => handleNumberInputChange(e, setCoast)}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                            />
+                        </div>
 
-                            <Form.Group className="mb-3">
-                                <Form.Label>Валюта:</Form.Label>
-                                <div>
-                                    <Form.Check
-                                        inline
+                        {/* Коэффициент наценки */}
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Коэффициент наценки</label>
+                            <input
+                                type="text"
+                                value={markupCoefficient}
+                                onChange={(e) => handleNumberInputChange(e, setMarkupCoefficient)}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                            />
+                        </div>
+
+                        {/* Валюта */}
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Валюта:</label>
+                            <div className="flex gap-4">
+                                <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                                    <input
                                         type="radio"
-                                        id="usd-currency"
-                                        label="USD"
                                         name="currency"
                                         checked={currency === 'USD'}
                                         onChange={() => setCurrency('USD')}
+                                        className="accent-blue-600"
                                     />
-                                    <Form.Check
-                                        inline
+                                    USD
+                                </label>
+                                <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                                    <input
                                         type="radio"
-                                        id="rmb-currency"
-                                        label="RMB"
                                         name="currency"
                                         checked={currency === 'RMB'}
                                         onChange={() => setCurrency('RMB')}
+                                        className="accent-blue-600"
                                     />
-                                </div>
-                            </Form.Group>
-
-                            <div className="mb-3 text-muted">
-                                <small>
-                                    Текущий курс USD: {usdValue ? (usdValue * settings.markupCB).toFixed(2) : '...'} ₽ (с учетом наценки {settings.markupCBPercent}%)
-                                    <br />
-                                    Текущий курс RMB: {rmbValue ? (rmbValue * settings.markupCB).toFixed(2) : '...'} ₽ (с учетом наценки {settings.markupCBPercent}%)
-                                </small>
+                                    RMB
+                                </label>
                             </div>
+                        </div>
 
-                            <Button
-                                variant="outline-secondary"
-                                onClick={clearFields}
-                                className="w-100"
-                            >
-                                Очистить поля
-                            </Button>
-                        </Card.Body>
-                    </Card>
-                </Col>
+                        {/* Курсы */}
+                        <div className="text-xs text-gray-400">
+                            Текущий курс USD: {usdValue ? (usdValue * settings.markupCB).toFixed(2) : '...'} ₽ (с учетом наценки {settings.markupCBPercent}%)
+                            <br />
+                            Текущий курс RMB: {rmbValue ? (rmbValue * settings.markupCB).toFixed(2) : '...'} ₽ (с учетом наценки {settings.markupCBPercent}%)
+                        </div>
 
-                <Col md={6}>
-                    <h5 className="mb-3">Результаты расчета:</h5>
+                        {/* Очистить */}
+                        <button
+                            onClick={clearFields}
+                            className="w-full rounded-lg border border-gray-300 py-2 text-sm text-gray-600 hover:bg-gray-50 transition"
+                        >
+                            Очистить поля
+                        </button>
+                    </div>
+                </div>
+
+                {/* Правая колонка — результаты */}
+                <div>
+                    <h2 className="mb-3 text-lg font-semibold text-gray-700">Результаты расчета:</h2>
                     <ProductCard
                         name={settings.railWay.name}
                         deliveryTime={settings.railWay.deliveryTime}
@@ -382,15 +403,15 @@ function CalculatorForm() {
                         sellingPrice={sellingPriceAir}
                         margin={marginAir}
                     />
-                </Col>
-            </Row>
+                </div>
+            </div>
 
             <SettingsPanel
                 show={showSettings}
                 onClose={() => setShowSettings(false)}
                 onSaved={refetch}
             />
-        </Container>
+        </div>
     );
 }
 
