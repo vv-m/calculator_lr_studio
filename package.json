@@ -45,6 +45,9 @@
       "last 1 safari version"
     ]
   },
+  "overrides": {
+    "fast-uri": "^2.4.0"
+  },
   "devDependencies": {
     "gh-pages": "^6.1.1"
   }

@@ -132,3 +132,6 @@ dmypy.json
 .idea
 /dump.rdb
 secrets.env
+
+# Node
+node_modules/
