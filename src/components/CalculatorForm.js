@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { Container, Row, Col, Form, Button, Card } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Card, Alert, Spinner } from 'react-bootstrap';
 
-// Компоненты
 import ProductCard from './ProductCard';
+import SettingsPanel from './SettingsPanel';
 
-// Хуки
 import useExchangeRates from '../hooks/useExchangeRates';
+import useSettings from '../hooks/useSettings';
 
-// Утилиты
 import {
     calculateRailwayDelivery,
     calculateAutoDelivery,
@@ -19,52 +18,54 @@ import {
 } from '../utils/calculationUtils';
 import { handleNumberInputChange, calculateVolume } from '../utils/inputHelpers';
 
-// Константы
-import {
-    railWay,
-    auto,
-    air,
-    markupCB,
-    markupCBPercent,
-    defaultMarkupCoefficient
-} from '../constants';
-
 function CalculatorForm() {
-    // Состояние полей ввода
+    const { settings, isLoading: settingsLoading, loadError: settingsError, missingKeys, refetch } = useSettings();
+    const [showSettings, setShowSettings] = useState(false);
+
     const [weight, setWeight] = useState('');
     const [size1, setSize1] = useState('');
     const [size2, setSize2] = useState('');
     const [size3, setSize3] = useState('');
     const [volume, setVolume] = useState('');
     const [coast, setCoast] = useState('');
-    const [markupCoefficient, setMarkupCoefficient] = useState(defaultMarkupCoefficient);
+    const [markupCoefficient, setMarkupCoefficient] = useState('');
 
-    // Режимы расчета и валюты
     const [currency, setCurrency] = useState('USD');
-    const [calcMode, setCalcMode] = useState('volume'); // dimensions или volume
+    const [calcMode, setCalcMode] = useState('volume');
 
-    // Стоимость товара в рублях
     const [coastOfItemByRUB, setCoastOfItemByRUB] = useState(0);
 
-    // Результаты расчетов для ЖД
     const [resultByRailway, setResultByRailway] = useState('');
     const [sellingPriceRailway, setSellingPriceRailway] = useState('');
     const [marginRailway, setMarginRailway] = useState('');
 
-    // Результаты расчетов для Авто
     const [resultByAuto, setResultByAuto] = useState('');
     const [sellingPriceAuto, setSellingPriceAuto] = useState('');
     const [marginAuto, setMarginAuto] = useState('');
 
-    // Результаты расчетов для Авиа
     const [resultByAir, setResultByAir] = useState('');
     const [sellingPriceAir, setSellingPriceAir] = useState('');
     const [marginAir, setMarginAir] = useState('');
 
-    // Получение курсов валют
+    const [showError, setShowError] = useState(false);
+    const [showMissingWarning, setShowMissingWarning] = useState(false);
+
     const { usdValue, rmbValue } = useExchangeRates();
 
-    // Расчет объема при изменении размеров
+    useEffect(() => {
+        if (settings) {
+            setMarkupCoefficient(settings.defaultMarkupCoefficient);
+        }
+    }, [settings]);
+
+    useEffect(() => {
+        if (settingsError) setShowError(true);
+    }, [settingsError]);
+
+    useEffect(() => {
+        if (missingKeys.length > 0) setShowMissingWarning(true);
+    }, [missingKeys]);
+
     useEffect(() => {
         if (calcMode === 'dimensions' && size1 && size2 && size3) {
             const calculatedVolume = calculateVolume(size1, size2, size3);
@@ -72,23 +73,22 @@ function CalculatorForm() {
         }
     }, [size1, size2, size3, calcMode]);
 
-    // Переключение режима расчета
     useEffect(() => {
         if (calcMode === 'dimensions') {
-            setVolume(''); // Очищаем поле объема при переключении на размеры
+            setVolume('');
         } else {
-            setSize1(''); // Очищаем поля размеров при переключении на объем
+            setSize1('');
             setSize2('');
             setSize3('');
         }
     }, [calcMode]);
 
     const calculateResult = () => {
-        // Проверка заполнения нужных полей в зависимости от режима
+        if (!settings) return;
+
         if (!weight || !coast ||
             (calcMode === 'dimensions' && (!size1 || !size2 || !size3)) ||
             (calcMode === 'volume' && !volume)) {
-            // Очищаем все результаты
             setResultByRailway('');
             setResultByAuto('');
             setResultByAir('');
@@ -101,82 +101,51 @@ function CalculatorForm() {
             return;
         }
 
-        // Определяем текущий курс валюты для расчета
         let currentCurrencyValue = 0;
         if (currency === "USD") {
-            currentCurrencyValue = usdValue * markupCB;
+            currentCurrencyValue = usdValue * settings.markupCB;
         } else if (currency === "RMB") {
-            currentCurrencyValue = rmbValue * markupCB;
+            currentCurrencyValue = rmbValue * settings.markupCB;
         }
 
-        // Стоимость товара в рублях
         const itemCostInRub = Number(coast) * currentCurrencyValue;
         setCoastOfItemByRUB(itemCostInRub);
 
-        // Объем - или вычисляем из размеров, или берем прямо из поля объема
         const volumeValue = calcMode === 'dimensions'
             ? Number(size1) * Number(size2) * Number(size3) / 1000000
             : Number(volume);
 
-        // Коэффициент наценки
         const markup = Number(markupCoefficient);
 
-        // ======= Расчет для ЖД =======
         const coastRailway = calculateRailwayDelivery(
-            Number(weight),
-            volumeValue,
-            usdValue,
-            markupCB,
-            itemCostInRub
+            Number(weight), volumeValue, usdValue, settings.markupCB, itemCostInRub, settings
         );
-
-        // Расчет цены продажи и маржинальности для ЖД
         const sellPriceRailway = calculateSellingPrice(coastRailway, markup);
         const marginRailwayValue = calculateMargin(sellPriceRailway, coastRailway);
-
-        // Устанавливаем результаты для ЖД
         setResultByRailway(formatNumber(coastRailway));
         setSellingPriceRailway(formatNumber(sellPriceRailway));
         setMarginRailway(marginRailwayValue);
 
-        // ======= Расчет для Авто =======
         const coastAuto = calculateAutoDelivery(
-            Number(weight),
-            volumeValue,
-            usdValue,
-            markupCB,
-            itemCostInRub
+            Number(weight), volumeValue, usdValue, settings.markupCB, itemCostInRub, settings
         );
-
-        // Расчет цены продажи и маржинальности для Авто
         const sellPriceAuto = calculateSellingPrice(coastAuto, markup);
         const marginAutoValue = calculateMargin(sellPriceAuto, coastAuto);
-
-        // Устанавливаем результаты для Авто
         setResultByAuto(formatNumber(coastAuto));
         setSellingPriceAuto(formatNumber(sellPriceAuto));
         setMarginAuto(marginAutoValue);
 
-        // ======= Расчет для Авиа с проверкой ограничений =======
         const airResult = calculateAirDelivery(
-            Number(weight),
-            volumeValue,
-            usdValue,
-            markupCB,
-            itemCostInRub
+            Number(weight), volumeValue, usdValue, settings.markupCB, itemCostInRub, settings
         );
 
         if (airResult.hasLimitation) {
-            // Если есть ограничения, показываем сообщение
             setResultByAir(airResult.message);
             setSellingPriceAir('');
             setMarginAir('');
         } else {
-            // Расчет цены продажи и маржинальности для Авиа
             const sellPriceAir = calculateSellingPrice(airResult.cost, markup);
             const marginAirValue = calculateMargin(sellPriceAir, airResult.cost);
-
-            // Устанавливаем результаты для Авиа
             setResultByAir(formatNumber(airResult.cost));
             setSellingPriceAir(formatNumber(sellPriceAir));
             setMarginAir(marginAirValue);
@@ -190,22 +159,58 @@ function CalculatorForm() {
         setSize3('');
         setVolume('');
         setCoast('');
-        // Не сбрасываем валюту, режим расчета и коэффициент наценки
     };
 
-    // Пересчет при изменении любого параметра
     useEffect(() => {
         calculateResult();
-    }, [weight, size1, size2, size3, volume, currency, coast, usdValue, rmbValue, calcMode, markupCoefficient]);
+    }, [weight, size1, size2, size3, volume, currency, coast, usdValue, rmbValue, calcMode, markupCoefficient, settings]);
 
-    // Установка заголовка страницы
     useEffect(() => {
         document.title = 'Калькулятор себестоимости товара с учетом доставки.';
     }, []);
 
+    if (settingsLoading || !settings) {
+        return (
+            <Container className="py-4 text-center">
+                <Spinner animation="border" role="status" className="mb-3" />
+                <p>Загрузка настроек...</p>
+            </Container>
+        );
+    }
+
     return (
         <Container className="py-4">
-            <h3 className="mb-4 text-center">Расчет себестоимости товара с доставкой</h3>
+            {showError && (
+                <Alert variant="danger" dismissible onClose={() => setShowError(false)}>
+                    Не удалось загрузить настройки из Supabase. Используются настройки по умолчанию.
+                    Обратитесь к администратору.
+                </Alert>
+            )}
+
+            {showMissingWarning && !showError && (
+                <Alert variant="warning" dismissible onClose={() => setShowMissingWarning(false)}>
+                    В Supabase отсутствуют следующие параметры (взяты из настроек по умолчанию):
+                    <ul className="mb-0 mt-1">
+                        {missingKeys.map((item, i) => (
+                            <li key={i}>{item.label}: <strong>{item.defaultValue}</strong></li>
+                        ))}
+                    </ul>
+                    Обратитесь к администратору.
+                </Alert>
+            )}
+
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <div style={{ width: '100px' }} />
+                <h3 className="mb-0 text-center flex-grow-1">Расчет себестоимости товара с доставкой</h3>
+                <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    onClick={() => setShowSettings(true)}
+                    style={{ width: '100px' }}
+                >
+                    Настройки
+                </Button>
+            </div>
 
             <Row>
                 <Col md={6}>
@@ -214,7 +219,6 @@ function CalculatorForm() {
                             <h5>Параметры расчета</h5>
                         </Card.Header>
                         <Card.Body>
-                            {/* Переключатель режима расчета */}
                             <Form.Group className="mb-3">
                                 <Form.Label>Способ расчета:</Form.Label>
                                 <div>
@@ -239,7 +243,6 @@ function CalculatorForm() {
                                 </div>
                             </Form.Group>
 
-                            {/* Поле веса */}
                             <Form.Group className="mb-3">
                                 <Form.Label>Вес, кг</Form.Label>
                                 <Form.Control
@@ -249,7 +252,6 @@ function CalculatorForm() {
                                 />
                             </Form.Group>
 
-                            {/* Поля размеров или объема в зависимости от режима */}
                             {calcMode === 'dimensions' ? (
                                 <>
                                     <Form.Group className="mb-3">
@@ -296,7 +298,6 @@ function CalculatorForm() {
                                 </Form.Group>
                             )}
 
-                            {/* Цена товара */}
                             <Form.Group className="mb-3">
                                 <Form.Label>Цена товара</Form.Label>
                                 <Form.Control
@@ -306,7 +307,6 @@ function CalculatorForm() {
                                 />
                             </Form.Group>
 
-                            {/* Коэффициент наценки */}
                             <Form.Group className="mb-3">
                                 <Form.Label>Коэффициент наценки</Form.Label>
                                 <Form.Control
@@ -316,7 +316,6 @@ function CalculatorForm() {
                                 />
                             </Form.Group>
 
-                            {/* Переключатель валюты */}
                             <Form.Group className="mb-3">
                                 <Form.Label>Валюта:</Form.Label>
                                 <div>
@@ -341,12 +340,11 @@ function CalculatorForm() {
                                 </div>
                             </Form.Group>
 
-                            {/* Курсы валют (информационно) */}
                             <div className="mb-3 text-muted">
                                 <small>
-                                    Текущий курс USD: {usdValue ? (usdValue * markupCB).toFixed(2) : '...'} ₽ (с учетом наценки {markupCBPercent}%)
+                                    Текущий курс USD: {usdValue ? (usdValue * settings.markupCB).toFixed(2) : '...'} ₽ (с учетом наценки {settings.markupCBPercent}%)
                                     <br />
-                                    Текущий курс RMB: {rmbValue ? (rmbValue * markupCB).toFixed(2) : '...'} ₽ (с учетом наценки {markupCBPercent}%)
+                                    Текущий курс RMB: {rmbValue ? (rmbValue * settings.markupCB).toFixed(2) : '...'} ₽ (с учетом наценки {settings.markupCBPercent}%)
                                 </small>
                             </div>
 
@@ -364,28 +362,34 @@ function CalculatorForm() {
                 <Col md={6}>
                     <h5 className="mb-3">Результаты расчета:</h5>
                     <ProductCard
-                        name={railWay.name}
-                        deliveryTime={railWay.deliveryTime}
+                        name={settings.railWay.name}
+                        deliveryTime={settings.railWay.deliveryTime}
                         price={resultByRailway}
                         sellingPrice={sellingPriceRailway}
                         margin={marginRailway}
                     />
                     <ProductCard
-                        name={auto.name}
-                        deliveryTime={auto.deliveryTime}
+                        name={settings.auto.name}
+                        deliveryTime={settings.auto.deliveryTime}
                         price={resultByAuto}
                         sellingPrice={sellingPriceAuto}
                         margin={marginAuto}
                     />
                     <ProductCard
-                        name={air.name}
-                        deliveryTime={air.deliveryTime}
+                        name={settings.air.name}
+                        deliveryTime={settings.air.deliveryTime}
                         price={resultByAir}
                         sellingPrice={sellingPriceAir}
                         margin={marginAir}
                     />
                 </Col>
             </Row>
+
+            <SettingsPanel
+                show={showSettings}
+                onClose={() => setShowSettings(false)}
+                onSaved={refetch}
+            />
         </Container>
     );
 }

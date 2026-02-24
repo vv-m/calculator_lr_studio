@@ -1,15 +1,3 @@
-import {
-    priceRailwayForKG,
-    priceRailwayForCUB,
-    priceAutoForKG,
-    priceAutoForCUB,
-    priceAirForKG,
-    maxWeightForAir,
-    maxVolumeForAir,
-    alarmWeightTextAir,
-    alarmVolumeTextAir
-} from '../constants';
-
 /**
  * Преобразует числовое значение в форматированную строку с разделением тысяч
  * @param {number} value - Значение для форматирования
@@ -27,9 +15,7 @@ export const formatNumber = (value) => {
  * @returns {string} - Маржинальность в рублях, форматированная строка
  */
 export const calculateMargin = (sellingPrice, costPrice) => {
-    // Вычисляем маржу в рублях
     const marginInRub = sellingPrice - costPrice;
-    // Возвращаем форматированную строку
     return formatNumber(marginInRub);
 };
 
@@ -51,18 +37,12 @@ export const calculateSellingPrice = (costPrice, markupCoefficient) => {
  * @param {number} usdRate - Курс USD
  * @param {number} markupCB - Коэффициент наценки на курс
  * @param {number} itemCostRub - Стоимость товара в рублях
+ * @param {Object} settings - Настройки (priceRailwayForKG, priceRailwayForCUB)
  * @returns {number} - Общая стоимость
  */
-export const calculateRailwayDelivery = (weight, volume, usdRate, markupCB, itemCostRub) => {
-    // Расчет по весу
-    const costByWeight = weight * priceRailwayForKG * usdRate * markupCB + itemCostRub;
-
-    // Расчет по объему
-    const costByVolume = volume * priceRailwayForCUB * usdRate * markupCB + itemCostRub;
-
-    // Логирование компонентов расчета
-
-    // Выбираем большее значение
+export const calculateRailwayDelivery = (weight, volume, usdRate, markupCB, itemCostRub, settings) => {
+    const costByWeight = weight * settings.priceRailwayForKG * usdRate * markupCB + itemCostRub;
+    const costByVolume = volume * settings.priceRailwayForCUB * usdRate * markupCB + itemCostRub;
     return Math.max(costByWeight, costByVolume);
 };
 
@@ -73,16 +53,12 @@ export const calculateRailwayDelivery = (weight, volume, usdRate, markupCB, item
  * @param {number} usdRate - Курс USD
  * @param {number} markupCB - Коэффициент наценки на курс
  * @param {number} itemCostRub - Стоимость товара в рублях
+ * @param {Object} settings - Настройки (priceAutoForKG, priceAutoForCUB)
  * @returns {number} - Общая стоимость
  */
-export const calculateAutoDelivery = (weight, volume, usdRate, markupCB, itemCostRub) => {
-    // Расчет по весу
-    const costByWeight = weight * priceAutoForKG * usdRate * markupCB + itemCostRub;
-
-    // Расчет по объему
-    const costByVolume = volume * priceAutoForCUB * usdRate * markupCB + itemCostRub;
-
-    // Выбираем большее значение
+export const calculateAutoDelivery = (weight, volume, usdRate, markupCB, itemCostRub, settings) => {
+    const costByWeight = weight * settings.priceAutoForKG * usdRate * markupCB + itemCostRub;
+    const costByVolume = volume * settings.priceAutoForCUB * usdRate * markupCB + itemCostRub;
     return Math.max(costByWeight, costByVolume);
 };
 
@@ -93,17 +69,16 @@ export const calculateAutoDelivery = (weight, volume, usdRate, markupCB, itemCos
  * @param {number} usdRate - Курс USD
  * @param {number} markupCB - Коэффициент наценки на курс
  * @param {number} itemCostRub - Стоимость товара в рублях
+ * @param {Object} settings - Настройки (priceAirForKG, maxWeightForAir, maxVolumeForAir, alarmWeightTextAir, alarmVolumeTextAir)
  * @returns {Object} - Результат расчета с цены и статусом ограничений
  */
-export const calculateAirDelivery = (weight, volume, usdRate, markupCB, itemCostRub) => {
-    // Проверка ограничений
-    if (weight > maxWeightForAir) {
-        return { cost: 0, message: alarmWeightTextAir, hasLimitation: true };
-    } else if (volume > maxVolumeForAir) {
-        return { cost: 0, message: alarmVolumeTextAir, hasLimitation: true };
+export const calculateAirDelivery = (weight, volume, usdRate, markupCB, itemCostRub, settings) => {
+    if (weight > settings.maxWeightForAir) {
+        return { cost: 0, message: settings.alarmWeightTextAir, hasLimitation: true };
+    } else if (volume > settings.maxVolumeForAir) {
+        return { cost: 0, message: settings.alarmVolumeTextAir, hasLimitation: true };
     } else {
-        // Расчет стоимости
-        const cost = weight * priceAirForKG * usdRate * markupCB + itemCostRub;
+        const cost = weight * settings.priceAirForKG * usdRate * markupCB + itemCostRub;
         return { cost, message: '', hasLimitation: false };
     }
 };
