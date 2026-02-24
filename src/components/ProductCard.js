@@ -21,7 +21,7 @@ const ProductCard = ({ name, deliveryTime, price, sellingPrice, margin }) => {
                         <span className="text-lg">{price} ₽</span>
                     </div>
                     <div className="flex justify-between">
-                        <span className="text-gray-600">Цена продажи:</span>
+                        <span className="text-gray-600">Минимальная цена продажи:</span>
                         <span className="text-lg font-bold">{sellingPrice} ₽</span>
                     </div>
                     <div className="flex justify-between">
