@@ -346,7 +346,7 @@ function CalculatorForm() {
                                     type="range"
                                     min="1"
                                     max="5"
-                                    step="0.1"
+                                    step="0.05"
                                     value={markupCoefficient || 1}
                                     onChange={(e) => setMarkupCoefficient(Number(e.target.value))}
                                     className="flex-1 accent-blue-600 cursor-pointer"
