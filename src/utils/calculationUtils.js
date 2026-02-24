@@ -8,14 +8,33 @@ export const formatNumber = (value) => {
     return result;
 };
 
+const TAX_DEDUCTION_RATE = 0.10;
+const MANAGER_RATE = 0.06;
+const VAT_RATE = 0.05;
+
 /**
- * Рассчитывает маржинальность в рублях
+ * Рассчитывает вычеты от цены продажи
+ * @param {number} sellingPrice - Минимальная цена продажи
+ * @returns {Object} - Вычеты: taxDeduction, managerFee, vat
+ */
+export const calculateDeductions = (sellingPrice) => {
+    return {
+        taxDeduction: sellingPrice * TAX_DEDUCTION_RATE,
+        managerFee: sellingPrice * MANAGER_RATE,
+        vat: sellingPrice * VAT_RATE,
+    };
+};
+
+/**
+ * Рассчитывает маржинальность в рублях с учетом вычетов
+ * Маржинальность = Мин. цена продажи - Себестоимость - Налоговые вычеты - Процент менеджера - НДС
  * @param {number} sellingPrice - Цена продажи
  * @param {number} costPrice - Себестоимость
  * @returns {string} - Маржинальность в рублях, форматированная строка
  */
 export const calculateMargin = (sellingPrice, costPrice) => {
-    const marginInRub = sellingPrice - costPrice;
+    const { taxDeduction, managerFee, vat } = calculateDeductions(sellingPrice);
+    const marginInRub = sellingPrice - costPrice - taxDeduction - managerFee - vat;
     return formatNumber(marginInRub);
 };
 

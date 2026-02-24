@@ -12,6 +12,7 @@ import {
     calculateAirDelivery,
     calculateSellingPrice,
     calculateMargin,
+    calculateDeductions,
     formatNumber
 } from '../utils/calculationUtils';
 import { handleNumberInputChange, calculateVolume } from '../utils/inputHelpers';
@@ -35,14 +36,17 @@ function CalculatorForm() {
 
     const [resultByRailway, setResultByRailway] = useState('');
     const [sellingPriceRailway, setSellingPriceRailway] = useState('');
+    const [deductionsRailway, setDeductionsRailway] = useState(null);
     const [marginRailway, setMarginRailway] = useState('');
 
     const [resultByAuto, setResultByAuto] = useState('');
     const [sellingPriceAuto, setSellingPriceAuto] = useState('');
+    const [deductionsAuto, setDeductionsAuto] = useState(null);
     const [marginAuto, setMarginAuto] = useState('');
 
     const [resultByAir, setResultByAir] = useState('');
     const [sellingPriceAir, setSellingPriceAir] = useState('');
+    const [deductionsAir, setDeductionsAir] = useState(null);
     const [marginAir, setMarginAir] = useState('');
 
     const [showError, setShowError] = useState(false);
@@ -93,6 +97,9 @@ function CalculatorForm() {
             setSellingPriceRailway('');
             setSellingPriceAuto('');
             setSellingPriceAir('');
+            setDeductionsRailway(null);
+            setDeductionsAuto(null);
+            setDeductionsAir(null);
             setMarginRailway('');
             setMarginAuto('');
             setMarginAir('');
@@ -119,18 +126,22 @@ function CalculatorForm() {
             Number(weight), volumeValue, usdValue, settings.markupCB, itemCostInRub, settings
         );
         const sellPriceRailway = calculateSellingPrice(coastRailway, markup);
+        const dedRailway = calculateDeductions(sellPriceRailway);
         const marginRailwayValue = calculateMargin(sellPriceRailway, coastRailway);
         setResultByRailway(formatNumber(coastRailway));
         setSellingPriceRailway(formatNumber(sellPriceRailway));
+        setDeductionsRailway(dedRailway);
         setMarginRailway(marginRailwayValue);
 
         const coastAuto = calculateAutoDelivery(
             Number(weight), volumeValue, usdValue, settings.markupCB, itemCostInRub, settings
         );
         const sellPriceAuto = calculateSellingPrice(coastAuto, markup);
+        const dedAuto = calculateDeductions(sellPriceAuto);
         const marginAutoValue = calculateMargin(sellPriceAuto, coastAuto);
         setResultByAuto(formatNumber(coastAuto));
         setSellingPriceAuto(formatNumber(sellPriceAuto));
+        setDeductionsAuto(dedAuto);
         setMarginAuto(marginAutoValue);
 
         const airResult = calculateAirDelivery(
@@ -140,12 +151,15 @@ function CalculatorForm() {
         if (airResult.hasLimitation) {
             setResultByAir(airResult.message);
             setSellingPriceAir('');
+            setDeductionsAir(null);
             setMarginAir('');
         } else {
             const sellPriceAir = calculateSellingPrice(airResult.cost, markup);
+            const dedAir = calculateDeductions(sellPriceAir);
             const marginAirValue = calculateMargin(sellPriceAir, airResult.cost);
             setResultByAir(formatNumber(airResult.cost));
             setSellingPriceAir(formatNumber(sellPriceAir));
+            setDeductionsAir(dedAir);
             setMarginAir(marginAirValue);
         }
     };
@@ -327,12 +341,30 @@ function CalculatorForm() {
                         {/* Коэффициент наценки */}
                         <div>
                             <label className="mb-1 block text-sm font-medium text-gray-700">Коэффициент наценки</label>
-                            <input
-                                type="text"
-                                value={markupCoefficient}
-                                onChange={(e) => handleNumberInputChange(e, setMarkupCoefficient)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-                            />
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="5"
+                                    step="0.1"
+                                    value={markupCoefficient || 1}
+                                    onChange={(e) => setMarkupCoefficient(Number(e.target.value))}
+                                    className="flex-1 accent-blue-600 cursor-pointer"
+                                />
+                                <input
+                                    type="text"
+                                    value={markupCoefficient}
+                                    onChange={(e) => handleNumberInputChange(e, setMarkupCoefficient)}
+                                    className="w-20 rounded-lg border border-gray-300 px-3 py-2 text-sm text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                                />
+                            </div>
+                            <div className="flex justify-between text-xs text-gray-400 mt-1 pr-[5.75rem]">
+                                <span>1</span>
+                                <span>2</span>
+                                <span>3</span>
+                                <span>4</span>
+                                <span>5</span>
+                            </div>
                         </div>
 
                         {/* Валюта */}
@@ -387,6 +419,9 @@ function CalculatorForm() {
                         deliveryTime={settings.railWay.deliveryTime}
                         price={resultByRailway}
                         sellingPrice={sellingPriceRailway}
+                        taxDeduction={deductionsRailway ? formatNumber(deductionsRailway.taxDeduction) : ''}
+                        managerFee={deductionsRailway ? formatNumber(deductionsRailway.managerFee) : ''}
+                        vat={deductionsRailway ? formatNumber(deductionsRailway.vat) : ''}
                         margin={marginRailway}
                     />
                     <ProductCard
@@ -394,6 +429,9 @@ function CalculatorForm() {
                         deliveryTime={settings.auto.deliveryTime}
                         price={resultByAuto}
                         sellingPrice={sellingPriceAuto}
+                        taxDeduction={deductionsAuto ? formatNumber(deductionsAuto.taxDeduction) : ''}
+                        managerFee={deductionsAuto ? formatNumber(deductionsAuto.managerFee) : ''}
+                        vat={deductionsAuto ? formatNumber(deductionsAuto.vat) : ''}
                         margin={marginAuto}
                     />
                     <ProductCard
@@ -401,6 +439,9 @@ function CalculatorForm() {
                         deliveryTime={settings.air.deliveryTime}
                         price={resultByAir}
                         sellingPrice={sellingPriceAir}
+                        taxDeduction={deductionsAir ? formatNumber(deductionsAir.taxDeduction) : ''}
+                        managerFee={deductionsAir ? formatNumber(deductionsAir.managerFee) : ''}
+                        vat={deductionsAir ? formatNumber(deductionsAir.vat) : ''}
                         margin={marginAir}
                     />
                 </div>
